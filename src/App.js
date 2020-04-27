@@ -18,20 +18,30 @@ class App extends Component {
     time:'',
     date:'',
     show: false,
+    showerror: false,
     option: 'imperial',
     degree: '°F'
   }
 
+  inputEmpty =(zipin) => {
+    if(zipin === ""){
+      alert("Please enter Zip");
+      return true;
+    }else {
+      return false;
+    };
+  }
+
   myClick =() => {
     let zipInput = document.getElementById('input').value;
-    this.setState({
+    if (this.inputEmpty(zipInput) === false){
+      this.setState({
       input: zipInput,
-      show: true,
     })
     setTimeout(()=> {
       this.getWeather();
-      this.getTimezone();
     }, 100);
+    }
   } 
 
   myKeyPress =(keypress) => {
@@ -56,14 +66,21 @@ class App extends Component {
     }
     }, 100)
     
-
     this.myClick();
   }
 
   getWeather = () => {
      fetch('https://api.openweathermap.org/data/2.5/weather?zip='+this.state.input+',us&units='+this.state.option+'&appid='+this.state.apikey)
      .then((result) => {
-        return result.json();
+       if (!result.ok){
+         this.setState({
+           show: false,
+           showerror: true,
+         })
+       } else {
+         return result.json();
+       }
+        
      })
      .then((result) => {
         console.log(result);
@@ -72,7 +89,14 @@ class App extends Component {
           city: result.name,
           weather: result.weather[0].main,
           temperature: Math.round(result.main.temp),
+          show: true,
+          showerror: false,
      })
+
+     this.getTimezone();
+    })
+    .catch((error) => {
+      console.log(error);
     })
   }
 
@@ -89,7 +113,7 @@ class App extends Component {
     return (
       <>
       <div>
-        <h1> U.S.A Weather App</h1>
+        <h1 class = "flicker-in-1"> U.S.A Weather App</h1>
         <input id ={"input"} type= "text" placeholder="Enter Zip" onKeyUp ={(keypress) =>{this.myKeyPress(keypress)}} />
         <button id ={"inputBtn"} onClick={()=>{this.myClick()}}>Submit</button>
       </div>
@@ -129,6 +153,9 @@ class App extends Component {
           Weather is {this.state.weather} <br></br>
           with a temperature of {this.state.temperature} {this.state.degree}<br></br>
           </h4>
+      </div>
+      <div style = {{ display: (this.state.showerror ? "block" : "none")}}> 
+        <h2> Invalid Zip</h2>
       </div>
     </>  
     );
